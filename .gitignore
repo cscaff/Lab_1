@@ -1,2 +1,5 @@
 # DS Store
 .DS_Store
+
+# Verilator build artifacts
+**/obj_dir/
