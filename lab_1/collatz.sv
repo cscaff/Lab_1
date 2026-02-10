@@ -16,7 +16,7 @@ module collatz( input logic         clk,   // Clock
       end else begin
          // Iterate once per clock until reaching 1
          if (dout != 32'd1) begin
-            if (dout[0] == 1'b0) begin
+            if (dout % 32'd2 == 32'd0) begin
                // even: n = n/2
                dout <= (dout >> 1);
             end else begin

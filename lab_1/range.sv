@@ -22,17 +22,146 @@ module range
 	      .dout());
 
    logic [RAM_ADDR_BITS - 1:0] 	 num;         // The RAM address to write
-   logic 			 running = 0; // True during the iterations
+   logic 			 running; // True during the iterations
 
-   /* Replace this comment and the code below with your solution,
-      which should generate running, done, cgo, n, num, we, and din */
-   assign done = cdone;
-   assign cgo = go;
-   assign n = start;
-   assign din = 16'h0;
-   assign num = 0;
-   assign we = running;   
-   /* Replace this comment and the code above with your solution */
+   typedef enum logic [1:0] {IDLE, RUN, WRITE, FINISH} state_t;
+   state_t state ;//= IDLE;
+
+   // logic [15:0] acc;
+
+   always_ff @(posedge clk) begin
+      if (go) state <= IDLE;
+   end
+
+   // always_ff @(posedge clk) begin
+   //    // Defaults each cycle
+   //    cgo <= 1'b0;
+   //    we  <= 1'b0;
+   //    // din <= acc;
+   //    done <= (state == FINISH);
+
+   //    case (state)
+   //       // RESET: begin
+   //       //    running <= 1'b0;
+   //       //    num <= '0;
+   //       //    acc <= 16'd0;
+   //       //    state <= IDLE;
+   //       // end
+   //       IDLE: begin
+   //          // IDLE STATE: AWAITING FOR GO SIGNAL
+   //          running <= 1'b0;
+   //          num <= '0;
+   //          din <= 16'd0;
+
+   //          if (go) begin
+   //             running <= 1'b1;
+
+   //             // Set signals for the Collatz iteration
+   //             cgo <= 1'b1;
+   //             n <= start;
+   //             din <= 16'd1;
+
+   //             state <= RUN;
+   //          end
+   //       end
+   //       RUN: begin
+   //          if (running) begin
+   //             if (cdone) begin
+   //                state <= WRITE;
+
+   //             end else begin
+   //                // Count the steps in the Collatz iteration
+   //                running <= 1'b1;
+   //                din <= din + 16'd1;
+   //             end
+   //          end 
+   //       end
+   //       WRITE: begin
+   //          // Write Count to RAM
+   //          //din <= acc;
+   //          we <= 1'b1;
+   //          // din <= acc;
+
+   //          // Terminate when RAM is filled
+   //          if (num == RAM_ADDR_BITS'(RAM_WORDS - 1)) begin
+   //             //running <= 1'b0;
+   //             state <= FINISH;
+   //          end else begin
+   //             // Advance to next memory address
+   //             num <= num + 1'b1;
+   //             din <= 16'd1;
+
+   //             // Determine next base value
+   //             n <= start + {{(32-RAM_ADDR_BITS){1'b0}}, (num + 1'b1)};
+   //             cgo <= 1'b1;
+   //             state <= RUN;
+   //          end
+   //       end
+   //       FINISH: begin
+   //         running <= 1'b0;
+   //       end
+   //    endcase
+   // end 
+
+   always_ff @(posedge clk) begin
+   // Defaults each cycle
+   cgo <= 1'b0;
+   we  <= 1'b0;
+   done <= (state == FINISH);
+
+   case (state)
+      IDLE: begin
+         // IDLE STATE: AWAITING FOR GO SIGNAL
+         running <= 1'b0;
+         num <= '0;
+         din <= 16'd0;
+         
+         if (go) begin
+            running <= 1'b1;
+            // Set signals for the Collatz iteration
+            cgo <= 1'b1;
+            n <= start;
+            din <= 16'd1;  // Start counting from 1
+            state <= RUN;
+         end
+      end
+      
+      RUN: begin
+         if (running) begin
+            if (cdone) begin
+               we <= 1'b1; // Enable writing to RAM
+               state <= WRITE;
+            end else begin
+               // Count the steps in the Collatz iteration
+               running <= 1'b1;
+               din <= din + 16'd1;
+            end
+         end
+      end
+      
+      WRITE: begin
+         // Don't write again - the write from RUN->WRITE transition already happened
+         // Just prepare for next iteration
+         
+         // Terminate when RAM is filled
+         if (num == RAM_ADDR_BITS'(RAM_WORDS - 1)) begin
+            state <= FINISH;
+         end else begin
+            // Advance to next memory address
+            num <= num + 1'b1;
+            din <= 16'd1;  // Reset count for next number
+            // Determine next base value
+            n <= start + {{(32-RAM_ADDR_BITS){1'b0}}, (num + 1'b1)};
+            cgo <= 1'b1;
+            state <= RUN;
+         end
+      end
+      
+      FINISH: begin
+         running <= 1'b0;
+      end
+   endcase
+end 
 
    logic 			 we;                    // Write din to addr
    logic [15:0] 		 din;                   // Data to write
