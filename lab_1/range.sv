@@ -21,10 +21,9 @@ module range
 
    logic [RAM_ADDR_BITS-1:0] num;     // RAM address to write
    logic                     running; // True during iterations
-   logic                     launch_pending; // 1 => pulse cgo next cycle
 
    logic                     we;      // Write enable
-   logic [15:0]              din;     // Data to write
+   logic [15:0]              din;
    logic [15:0]              mem[RAM_WORDS-1:0];
    logic [RAM_ADDR_BITS-1:0] addr;
 
@@ -50,23 +49,15 @@ module range
       // Start new sweep on go rising edge
       if (go_rise) begin
          running        <= 1'b1;
+         cgo           <= 1'b1;
          done           <= 1'b0;
-
          num            <= '0;
          n              <= start;
-
-         din            <= 16'd1;      // count convention (length incl. start & 1)
-         launch_pending <= 1'b1;       // pulse cgo next cycle (after n is stable)
+         din            <= 16'd1;      
       end
       else if (running) begin
-         // Issue the one-cycle cgo pulse when pending
-         if (launch_pending) begin
-            cgo           <= 1'b1;
-            launch_pending <= 1'b0;
-         end
-
          // Count cycles only after launch has happened and before done
-         if (!launch_pending && !cdone) begin
+         if (!cgo && !cdone) begin
             din <= din + 16'd1;
          end
 
@@ -79,13 +70,12 @@ module range
             else begin
                num            <= num + 1'b1;
                n              <= n + 32'd1;
-
                din            <= 16'd1;
-               launch_pending <= 1'b1; // start next n on the following cycle
+               cgo           <= 1'b1;       
             end
          end
       end
-   end
+   end 
 
    // -----------------------------
    // RAM read/write
