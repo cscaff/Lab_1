@@ -21,7 +21,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic [31:0] 		start;
       logic [15:0] 		count;
 
-      logic [11:0] 		n;
+      // logic [11:0] 		n;
 
 
       // Define hex display 
@@ -30,14 +30,14 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // Offset for incrementing / decrementing display + Memory Address
       logic [11:0] offset;
 
-      // Constant SW
-      logic [11:0] base_latched;
-
       // Display (Either read base SW or offset SW)
-      assign disp_hex = done ? base_latched + {4'b0, offset[7:0]} : {2'b00, SW};
-      
+      assign disp_hex = {2'b00, SW} + offset;
+
+      assign disp_count = done ? count : 16'b0;
+
       // Start Value (if not done: base SW, else offset memory read)
       assign start = done ? {24'b0, offset[7:0]} : {20'b0, 2'b00, SW};
+      // If start = done, start = count to read, else start = base SW
 
 
       assign clk = CLOCK_50;
@@ -63,27 +63,12 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
 
       // HEX displays
-      hex7seg H0(.a(count[ 3:0]), .y(HEX0));
-      hex7seg H1(.a(count[ 7:4]), .y(HEX1));
-      hex7seg H2(.a(count[11:8]), .y(HEX2));
+      hex7seg H0(.a(disp_count[ 3:0]), .y(HEX0));
+      hex7seg H1(.a(disp_count[ 7:4]), .y(HEX1));
+      hex7seg H2(.a(disp_count[11:8]), .y(HEX2));
       hex7seg H3(.a(disp_hex[ 3:0]), .y(HEX3));
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
-
-   // Replace this comment and the code below it with your own code;
-   // The code below is merely to suppress Verilator lint warnings
-//    assign HEX0 = {KEY[2:0], KEY[3:0]};
-//    assign HEX1 = SW[6:0];
-//    assign HEX2 = {(n == 12'b0), (count == 16'b0) ^ KEY[1],
-// 		  go, done ^ KEY[0], SW[9:7]};
-//    assign HEX3 = HEX0;
-//    assign HEX4 = HEX1;
-//    assign HEX5 = HEX2;
-//    assign LEDR = SW;
-//    assign go = KEY[0];
-//    assign start = {SW[1:0], SW, SW, SW};
-//    assign n = {SW[1:0], SW};
-
 
       // Increment / decrement display with buttons
       // Repeat counter for ~5 Hz increment
@@ -95,8 +80,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             // click increments (immediate, one-shot)
             if (c3) begin
                   go <= 1'b1;
-                  base_latched <= {2'b00, SW};
-                  offset <= 12'd0;
             end
             else if (c0)
                   offset <= offset + 12'd1;
@@ -112,8 +95,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
                         offset <= offset - 12'd1;
             end
       end
-
-  
 endmodule
 
 
