@@ -24,16 +24,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    logic [11:0] 		n;
    
    assign clk = CLOCK_50;
-
-   logic [31:0] dout_wire;
-
-   collatz c (
-    .clk  (clk),
-    .go   (go),
-    .n    ({20'b0, base_latched + {4'b0, offset}}),  
-    .dout (dout_wire),
-    .done (done)
-  );
  
    range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
          r ( .* ); // Connect everything with matching names
@@ -59,17 +49,19 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    logic [11:0] base_sw, base_latched, disp_n;
    logic [7:0]  offset;
 
+   // Prime GO Button
+   logic go_next;
+
    // ~5 Hz repeat
    logic [23:0] repdiv;
    wire tick5 = (repdiv == 24'd9_999_999);
 
-   assign count = dout_wire[15:0];
    assign base_sw = {2'b00, SW};
    assign disp_n  = base_latched + {4'b0, offset};
 
    // start value to range
    always_comb
-     start = done ? {24'b0, offset} : {20'b0, base_latched};
+      start = {20'b0, disp_n};
 
    // LEDs
    always_comb begin
@@ -80,7 +72,10 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    end
 
    always_ff @(posedge clk) begin
-     go <= 1'b0;
+      // Default
+     go_next <= 1'b0; 
+     go  <= go_next;  
+
 
      // repeat divider
      if (tick5) repdiv <= 24'd0;
@@ -90,23 +85,38 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
      if (c2) begin
        base_latched <= base_sw;
        offset       <= 8'd0;
-       go           <= 1'b1;
+       go_next      <= 1'b1;
      end
 
      // reset offset
-     if (c3) offset <= 8'd0;
-
-     // inc / dec
-     if (!(h0 && h1)) begin
-       if (c0 && offset != 8'hFF) offset <= offset + 8'd1;
-       if (c1 && offset != 8'h00) offset <= offset - 8'd1;
-
-       if (tick5) begin
-         if (h0 && offset != 8'hFF) offset <= offset + 8'd1;
-         if (h1 && offset != 8'h00) offset <= offset - 8'd1;
-       end
+     if (c3) begin
+            offset       <= 8'd0;
+            go_next      <= 1'b1;
      end
-   end
+
+      if (!(h0 && h1)) begin
+            if (c0 && offset != 8'hFF) begin
+            offset <= offset + 8'd1;
+            go_next <= 1'b1;
+            end
+            if (c1 && offset != 8'h00) begin
+            offset <= offset - 8'd1;
+            go_next <= 1'b1;
+            end
+
+            if (tick5) begin
+            if (h0 && offset != 8'hFF) begin
+            offset <= offset + 8'd1;
+            go_next <= 1'b1;
+            end
+            if (h1 && offset != 8'h00) begin
+            offset <= offset - 8'd1;
+            go_next <= 1'b1;
+            end
+            end
+      end
+      end
+
 
    // HEX displays
    hex7seg H0(.a(count[ 3:0]), .y(HEX0));
@@ -162,4 +172,3 @@ module debounce_click #(
   end
 
 endmodule
-
