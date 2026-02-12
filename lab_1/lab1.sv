@@ -27,7 +27,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    // Define hex display 
    logic [11:0] disp_hex;
 
-   assign disp_hex = = {2'b00, SW};
+   assign disp_hex = {2'b00, SW};
 
    assign clk = CLOCK_50;
  
