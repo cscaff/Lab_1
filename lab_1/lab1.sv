@@ -36,7 +36,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       assign disp_hex = {2'b00, SW} + offset;
 
       // Start Value (if not done: base SW, else offset memory read)
-      assign start = done ? {24'b0, offset[7:0]} : {20'b0, 2'b00, SW};
+      assign start = done ? {24'b0, offset[7:0]} : disp_hex;
       // If start = done, start = count to read, else start = base SW
 
 
