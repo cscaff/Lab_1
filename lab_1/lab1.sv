@@ -80,6 +80,8 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             // Keep count stable until done
             if (done)
                   count_d <= count;
+            else
+                  count_d <= count_d;
 
             // click increments (immediate, one-shot)
             if (c3) begin
