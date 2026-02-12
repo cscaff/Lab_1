@@ -110,7 +110,7 @@ endmodule
 // A "click" is generated on release after a valid stable press.
 module debounce_click #(
   parameter int CLK_HZ = 50_000_000,
-  parameter int MS     = 100
+  parameter int MS     = 1000
 )(
   input  logic clk,
   input  logic raw_pressed,  // 1 = pressed (already inverted)
