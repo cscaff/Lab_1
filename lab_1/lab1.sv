@@ -29,7 +29,11 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
       logic [11:0] offset;
 
+      // Display
       assign disp_hex = {2'b00, SW} + offset;
+      
+      // Start Value
+      assign start = {20'b0, disp_hex};
 
       assign clk = CLOCK_50;
       
@@ -82,7 +86,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             rep_cnt <= rep_cnt + 23'd1;
 
             // click increments (immediate, one-shot)
-            if (c0)
+            if (c3)
+                  go <= 1'b1;
+            else if (c0)
                   offset <= offset + 12'd1;
             else if (c1)
                   offset <= offset - 12'd1;
