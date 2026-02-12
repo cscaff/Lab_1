@@ -27,13 +27,18 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // Define hex display 
       logic [11:0] disp_hex;
 
+      // Offset for incrementing / decrementing display + Memory Address
       logic [11:0] offset;
 
-      // Display
-      assign disp_hex = {2'b00, SW} + offset;
+      // Constant SW
+      logic [11:0] base_latched;
+
+      // Display (Either read base SW or offset SW)
+      assign disp_hex = done ? base_latched + {4'b0, offset[7:0]} : {2'b00, SW};
       
-      // Start Value
-      assign start = {20'b0, disp_hex};
+      // Start Value (if not done: base SW, else offset memory read)
+      assign start = done ? {24'b0, offset[7:0]} : {20'b0, 2'b00, SW};
+
 
       assign clk = CLOCK_50;
       
@@ -90,6 +95,8 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             // click increments (immediate, one-shot)
             if (c3)
                   go <= 1'b1;
+                  base_latched <= {2'b00, SW};
+                  offset <= 12'd0;
             else if (c0)
                   offset <= offset + 12'd1;
             else if (c1)
