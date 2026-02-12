@@ -26,15 +26,14 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
       // Define hex display 
       logic [11:0] disp_hex;
-      logic [15:0] disp_count;
 
       // Offset for incrementing / decrementing display + Memory Address
       logic [11:0] offset;
 
+      logic count_d;
+
       // Display (Either read base SW or offset SW)
       assign disp_hex = {2'b00, SW} + offset;
-
-      assign disp_count = done ? count : 16'b0;
 
       // Start Value (if not done: base SW, else offset memory read)
       assign start = done ? {24'b0, offset[7:0]} : {20'b0, 2'b00, SW};
@@ -64,9 +63,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
 
       // HEX displays
-      hex7seg H0(.a(disp_count[ 3:0]), .y(HEX0));
-      hex7seg H1(.a(disp_count[ 7:4]), .y(HEX1));
-      hex7seg H2(.a(disp_count[11:8]), .y(HEX2));
+      hex7seg H0(.a(count[ 3:0]), .y(HEX0));
+      hex7seg H1(.a(count[ 7:4]), .y(HEX1));
+      hex7seg H2(.a(count[11:8]), .y(HEX2));
       hex7seg H3(.a(disp_hex[ 3:0]), .y(HEX3));
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
@@ -77,6 +76,10 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             // Default
             rep_cnt <= rep_cnt + 23'd1;
             go <= 1'b0;
+
+            // Keep count stable until done
+            if (!done)
+                  count_d <= count;
 
             // click increments (immediate, one-shot)
             if (c3) begin
