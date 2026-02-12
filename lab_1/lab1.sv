@@ -43,6 +43,8 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    logic c0, c1, c2, c3;  // click events (one-cycle on release)
 
       // Debouncing Buttons
+      localparam int CLK_HZ = 50_000_000;
+
       debounce_click #(CLK_HZ, 100) db0(clk, p0, h0, c0);
       debounce_click #(CLK_HZ, 100) db1(clk, p1, h1, c1);
       debounce_click #(CLK_HZ, 100) db2(clk, p2, h2, c2);
