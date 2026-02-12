@@ -27,7 +27,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
    // Define hex display 
    logic [11:0] disp_hex;
 
-   assign disp_hex = {2'b00, SW};
+   logic [11:0] offset;
+
+   assign disp_hex = {2'b00, SW} + offset;
 
    assign clk = CLOCK_50;
  
@@ -54,9 +56,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
 
-
-
-
    // Replace this comment and the code below it with your own code;
    // The code below is merely to suppress Verilator lint warnings
 //    assign HEX0 = {KEY[2:0], KEY[3:0]};
@@ -72,13 +71,14 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 //    assign n = {SW[1:0], SW};
 
 
-    // We want to display switch value on the display
-
+      // Increment / decrement display with buttons
       always_ff @(posedge clk) begin
-      if (c0)
-            disp_hex <= disp_hex + 12'd1;
-      else if (c1)
-            disp_hex <= disp_hex - 12'd1;
+            if (c0)
+                  offset <= offset + 12'd1;
+            else if (c1)
+                  offset <= offset - 12'd1;
+            else if (c2)
+                  offset <= 12'd0;
       end
   
 endmodule
