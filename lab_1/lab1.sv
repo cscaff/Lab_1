@@ -63,9 +63,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
 
       // HEX displays
-      hex7seg H0(.a(count[ 3:0]), .y(HEX0));
-      hex7seg H1(.a(count[ 7:4]), .y(HEX1));
-      hex7seg H2(.a(count[11:8]), .y(HEX2));
+      hex7seg H0(.a(count_d[ 3:0]), .y(HEX0));
+      hex7seg H1(.a(count_d[ 7:4]), .y(HEX1));
+      hex7seg H2(.a(count_d[11:8]), .y(HEX2));
       hex7seg H3(.a(disp_hex[ 3:0]), .y(HEX3));
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
@@ -78,7 +78,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             go <= 1'b0;
 
             // Keep count stable until done
-            if (!done)
+            if (done)
                   count_d <= count;
 
             // click increments (immediate, one-shot)
