@@ -83,7 +83,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // Increment / decrement display with buttons
       // Repeat counter for ~5 Hz increment
       always_ff @(posedge clk) begin
+            // Default
             rep_cnt <= rep_cnt + 23'd1;
+            go <= 1'b0;
 
             // click increments (immediate, one-shot)
             if (c3)
