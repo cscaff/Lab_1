@@ -26,6 +26,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
       // Define hex display 
       logic [11:0] disp_hex;
+      logic [15:0] disp_count;
 
       // Offset for incrementing / decrementing display + Memory Address
       logic [11:0] offset;
