@@ -93,10 +93,11 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             go <= 1'b0;
 
             // click increments (immediate, one-shot)
-            if (c3)
+            if (c3) begin
                   go <= 1'b1;
                   base_latched <= {2'b00, SW};
                   offset <= 12'd0;
+            end
             else if (c0)
                   offset <= offset + 12'd1;
             else if (c1)
