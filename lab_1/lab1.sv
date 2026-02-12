@@ -17,30 +17,33 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 	     output logic [9:0] LEDR // LEDs above the switches; LED[0] on right
 	     );
 
-   logic 			clk, go, done;   
-   logic [31:0] 		start;
-   logic [15:0] 		count;
+      logic 			clk, go, done;   
+      logic [31:0] 		start;
+      logic [15:0] 		count;
 
-   logic [11:0] 		n;
-
-
-   // Define hex display 
-   logic [11:0] disp_hex;
-
-   logic [11:0] offset;
-
-   assign disp_hex = {2'b00, SW} + offset;
-
-   assign clk = CLOCK_50;
- 
-   range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
-         r ( .* ); // Connect everything with matching names
+      logic [11:0] 		n;
 
 
-   wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
+      // Define hex display 
+      logic [11:0] disp_hex;
 
-   logic h0, h1, h2, h3;          // held (debounced) for inc/dec
-   logic c0, c1, c2, c3;  // click events (one-cycle on release)
+      logic [11:0] offset;
+
+      assign disp_hex = {2'b00, SW} + offset;
+
+      assign clk = CLOCK_50;
+      
+      range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
+            r ( .* ); // Connect everything with matching names
+
+
+      wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
+
+      logic h0, h1, h2, h3;          // held (debounced) for inc/dec
+      logic c0, c1, c2, c3;  // click events (one-cycle on release)
+
+      // Repeat Counter
+      logic [22:0] rep_cnt;
 
       // Debouncing Buttons
       localparam int CLK_HZ = 50_000_000;
@@ -74,14 +77,26 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
 
       // Increment / decrement display with buttons
+      // Repeat counter for ~5 Hz increment
       always_ff @(posedge clk) begin
+            rep_cnt <= rep_cnt + 23'd1;
+
+            // click increments (immediate, one-shot)
             if (c0)
                   offset <= offset + 12'd1;
             else if (c1)
                   offset <= offset - 12'd1;
             else if (c2)
                   offset <= 12'd0;
+            // hold increments (repeated at ~5 Hz)
+            else if (rep_cnt == 23'd0) begin
+                  if (h0)
+                        offset <= offset + 12'd1;
+                  else if (h1)
+                        offset <= offset - 12'd1;
+            end
       end
+
   
 endmodule
 
