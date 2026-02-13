@@ -42,16 +42,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic h0, h1, h2, h3;          // held (debounced) for inc/dec
       logic c0, c1, c2, c3;  // click events (one-cycle on release)
 
-      // Repeat Counter
-      // logic [22:0] rep_cnt;
-
       // Debouncing Buttons
       localparam int CLK_HZ = 50_000_000;
 
-      // debounce_click #(CLK_HZ, 100) db0(clk, p0, h0, c0);
-      // debounce_click #(CLK_HZ, 100) db1(clk, p1, h1, c1);
-      // debounce_click #(CLK_HZ, 100) db2(clk, p2, h2, c2);
-      // debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
       Button b0(.clk(clk), .raw_pressed(p0), .held(h0), .click(c0));
       Button b1(.clk(clk), .raw_pressed(p1), .held(h1), .click(c1));
       Button b2(.clk(clk), .raw_pressed(p2), .held(h2), .click(c2));
@@ -66,100 +59,71 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
 
-      // Increment / decrement display with buttons
-      // Repeat counter for ~5 Hz increment
-      // always_ff @(posedge clk) begin
-            // // Default
-            // rep_cnt <= rep_cnt + 23'd1;
-            // go <= 1'b0;
+      // Defaults
+      typedef enum logic [2:0] {
+            IDLE    = 3'b000,
+            GO      = 3'b001,
+            RUNNING = 3'b010,
+            FINISH  = 3'b011,
+            RESET   = 3'b100
+      } state_t;
 
-            // // Keep count stable until done
-
-            // // click increments 
-            // if (c3) begin
-            //       go <= 1'b1;
-            // end
-            // else if (c0)
-            //       offset <= offset + 12'd1;
-            // else if (c1)
-            //       offset <= offset - 12'd1;
-            // else if (c2)
-            //       offset <= 12'd0;
-            // // hold increments (repeated at ~5 Hz)
-            // else if (rep_cnt == 23'd0) begin
-            //       if (h0)
-            //             offset <= offset + 12'd1;
-            //       else if (h1)
-            //             offset <= offset - 12'd1;
-            // end
-      // end
+      state_t state;
 
 
-            // Defaults
-            typedef enum logic [2:0] {
-                  IDLE    = 3'b000,
-                  GO      = 3'b001,
-                  RUNNING = 3'b010,
-                  FINISH  = 3'b011,
-                  RESET   = 3'b100
-            } state_t;
+      // Button Clicks
+      always_ff @(posedge clk) begin
+            // DEFAULT
+            go <= 1'b0;
 
-            state_t state;
+            case (state)
+                  IDLE: begin
+                        // OUTPUT
+                        start <= {24'b0, SW};
 
+                        // GO transition
+                        if (c3 && !c2 && !c1 && !c0) state <= GO;
+                  end
 
-            // Button Clicks
-            always_ff @(posedge clk) begin
-                  // DEFAULT
-                  go <= 1'b0;
+                  GO: begin
+                        // OUTPUT
+                        go <= 1'b1;
+                        state <= RUNNING;
+                  end
 
-                  case (state)
-                        IDLE: begin
-                              // OUTPUT
-                              start <= {24'b0, SW};
+                  RUNNING: begin
+                        if (done) begin
+                              state <= FINISH;
+                              start <= {24'b0, offset[7:0]};
+                        end 
+                  end
 
-                              // GO transition
-                              if (c3 && !c2 && !c1 && !c0) state <= GO;
-                        end
-
-                        GO: begin
-                              // OUTPUT
-                              go <= 1'b1;
-                              state <= RUNNING;
-                        end
-
-                        RUNNING: begin
-                              if (done) begin
-                                    state <= FINISH;
-                                    start <= {24'b0, offset[7:0]};
-                              end 
-                        end
-
-                        FINISH: begin
-                              // Increment / decrement display with buttons
-                              if (c0 && !c1 && !c2 && !c3) begin
-                                    // Bound offset to 0-255
-                                    if (offset != 8'hFF) begin
-                                          offset <= offset + 12'd1;
-                                          start <= {24'b0, offset[7:0] + 8'd1};
-                                    end
-                              end else if (!c0 && c1 && !c2 && !c3) begin
-                                    // Bound offset to 0-255
-                                    if (offset != 8'h00) begin
-                                          offset <= offset - 12'd1;
-                                          start <= {24'b0, offset[7:0] - 8'd1};
-                                    end
-                              end else if (!c0 && !c1 && c2 && !c3) begin
-                                    offset <= 12'd0;
-                                    // RETURN TO RESET
-                                    state <= RESET;
+                  FINISH: begin
+                        // Increment / decrement display with buttons
+                        if ((c0 && !c1 && !c2 && !c3) || (h0)) begin
+                              // Bound offset to 0-255
+                              if (offset != 8'hFF) begin
+                                    offset <= offset + 12'd1;
+                                    start <= {24'b0, offset[7:0] + 8'd1};
                               end
+                        end else if ((!c0 && c1 && !c2 && !c3) || (h1)) begin
+                              // Bound offset to 0-255
+                              if (offset != 8'h00) begin
+                                    offset <= offset - 12'd1;
+                                    start <= {24'b0, offset[7:0] - 8'd1};
+                              end
+                        end else if ((!c0 && !c1 && c2 && !c3)) begin
+                              offset <= 12'd0;
+                              // RETURN TO RESET
+                              state <= RESET;
                         end
+                  end
 
-                        RESET: begin
-                              state <= IDLE;
-                        end
-                  endcase  
-            end
+                  RESET: begin
+                        state <= IDLE;
+                  end
+            endcase  
+      end
 endmodule
 
 
