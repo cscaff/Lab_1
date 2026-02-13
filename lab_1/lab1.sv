@@ -152,7 +152,7 @@ endmodule
 // endmodule
 
 module Button
-//    #(parameter int HALF_SEC = 25_000_000) // 50 MHz * 0.5 s
+   #(parameter int HALF_SEC = 25_000_000) // 50 MHz * 0.5 s
 (
       input  logic clk,
       input  logic raw_pressed,
