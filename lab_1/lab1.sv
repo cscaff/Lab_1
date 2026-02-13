@@ -137,10 +137,12 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
                                     // Bound offset to 0-255
                                     if (offset != 8'hFF)
                                           offset <= offset + 12'd1;
+                                          start <= {24'b0, offset[7:0]};
                               end else if (!c0 && c1 && !c2 && !c3) begin
                                     // Bound offset to 0-255
                                     if (offset != 8'h00)
                                           offset <= offset - 12'd1;
+                                          start <= {24'b0, offset[7:0]};
                               end else if (!c0 && !c1 && c2 && !c3) begin
                                     offset <= 12'd0;
                                     // RETURN TO RESET
