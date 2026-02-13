@@ -156,7 +156,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
                         RESET: begin
                               state <= IDLE;
-                              count <= 16'd0;
                         end
                   endcase  
             end
