@@ -33,6 +33,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic [11:0] offset;
 
       assign clk = CLOCK_50;
+
+      // Repeat Counter
+      logic [22:0] rep_cnt;
       
       range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
             r ( .* ); // Connect everything with matching names
@@ -75,6 +78,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       always_ff @(posedge clk) begin
             // DEFAULT
             go <= 1'b0;
+            rep_cnt <= rep_cnt + 23'd1;
 
             case (state)
                   IDLE: begin
@@ -100,13 +104,13 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
                   FINISH: begin
                         // Increment / decrement display with buttons
-                        if ((c0 && !c1 && !c2 && !c3) || (h0)) begin
+                        if ((c0 && !c1 && !c2 && !c3) || (h0 && rep_cnt == 23'd0)) begin
                               // Bound offset to 0-255
                               if (offset != 8'hFF) begin
                                     offset <= offset + 12'd1;
                                     start <= {24'b0, offset[7:0] + 8'd1};
                               end
-                        end else if ((!c0 && c1 && !c2 && !c3) || (h1)) begin
+                        end else if ((!c0 && c1 && !c2 && !c3) || (h1 && rep_cnt == 23'd0)) begin
                               // Bound offset to 0-255
                               if (offset != 8'h00) begin
                                     offset <= offset - 12'd1;
