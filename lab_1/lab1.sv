@@ -45,7 +45,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
             r ( .* ); // Connect everything with matching names
 
-      // wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
+      wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
 
       logic h0, h1, h2, h3;          // held (debounced) for inc/dec
       logic c0, c1, c2, c3;  // click events (one-cycle on release)
@@ -60,10 +60,10 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // debounce_click #(CLK_HZ, 100) db1(clk, p1, h1, c1);
       // debounce_click #(CLK_HZ, 100) db2(clk, p2, h2, c2);
       // debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
-      Button b0(.clk(clk), .raw_pressed(KEY[0]), .held(h0), .click(c0));
-      Button b1(.clk(clk), .raw_pressed(KEY[1]), .held(h1), .click(c1));
-      Button b2(.clk(clk), .raw_pressed(KEY[2]), .held(h2), .click(c2));
-      Button b3(.clk(clk), .raw_pressed(KEY[3]), .held(h3), .click(c3));
+      Button b0(.clk(clk), .raw_pressed(p0), .held(h0), .click(c0));
+      Button b1(.clk(clk), .raw_pressed(p1), .held(h1), .click(c1));
+      Button b2(.clk(clk), .raw_pressed(p2), .held(h2), .click(c2));
+      Button b3(.clk(clk), .raw_pressed(p3), .held(h3), .click(c3));
 
 
       // HEX displays
@@ -152,6 +152,7 @@ endmodule
 // endmodule
 
 module Button
+//    #(parameter int HALF_SEC = 25_000_000) // 50 MHz * 0.5 s
 (
       input  logic clk,
       input  logic raw_pressed,
@@ -159,8 +160,6 @@ module Button
       output logic click
 );
 
-      // 50 MHz * 0.5 s = 25,000,000 cycles per half-second
-      localparam int HALF_SEC = 25_000_000;
       logic [24:0] clk_cnt;  // 25 bits to hold up to 25M
 
       typedef enum logic [1:0] {
