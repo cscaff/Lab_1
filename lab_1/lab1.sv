@@ -45,8 +45,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
             r ( .* ); // Connect everything with matching names
 
-
-      wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
+      // wire p0 = ~KEY[0], p1 = ~KEY[1], p2 = ~KEY[2], p3 = ~KEY[3];
 
       logic h0, h1, h2, h3;          // held (debounced) for inc/dec
       logic c0, c1, c2, c3;  // click events (one-cycle on release)
@@ -57,10 +56,15 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // Debouncing Buttons
       localparam int CLK_HZ = 50_000_000;
 
-      debounce_click #(CLK_HZ, 100) db0(clk, p0, h0, c0);
-      debounce_click #(CLK_HZ, 100) db1(clk, p1, h1, c1);
-      debounce_click #(CLK_HZ, 100) db2(clk, p2, h2, c2);
-      debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
+      // debounce_click #(CLK_HZ, 100) db0(clk, p0, h0, c0);
+      // debounce_click #(CLK_HZ, 100) db1(clk, p1, h1, c1);
+      // debounce_click #(CLK_HZ, 100) db2(clk, p2, h2, c2);
+      // debounce_click #(CLK_HZ, 100) db3(clk, p3, h3, c3);
+      Button b0(.clk(clk), .raw_pressed(KEY[0]), .held(h0), .click(c0));
+      Button b1(.clk(clk), .raw_pressed(KEY[1]), .held(h1), .click(c1));
+      Button b2(.clk(clk), .raw_pressed(KEY[2]), .held(h2), .click(c2));
+      Button b3(.clk(clk), .raw_pressed(KEY[3]), .held(h3), .click(c3));
+
 
       // HEX displays
       hex7seg H0(.a(count_d[ 3:0]), .y(HEX0));
@@ -83,7 +87,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
             else
                   count_d <= count_d;
 
-            // click increments (immediate, one-shot)
+            // click increments 
             if (c3) begin
                   go <= 1'b1;
             end
@@ -108,43 +112,100 @@ endmodule
 // Debounced click detector
 // Active-low buttons must be stable-low for MS milliseconds.
 // A "click" is generated on release after a valid stable press.
-module debounce_click #(
-  parameter int CLK_HZ = 50_000_000,
-  parameter int MS     = 1000
-)(
-  input  logic clk,
-  input  logic raw_pressed,  // 1 = pressed (already inverted)
-  output logic held,         // debounced pressed
-  output logic click         // 1-cycle pulse on release
+// module debounce_click #(
+//   parameter int CLK_HZ = 50_000_000,
+//   parameter int MS     = 100
+// )(
+//   input  logic clk,
+//   input  logic raw_pressed,  // 1 = pressed (already inverted)
+//   output logic held,         // debounced pressed
+//   output logic click         // 1-cycle pulse on release
+// );
+
+//   localparam int TICKS = (CLK_HZ/1000)*MS;
+//   localparam int CW    = $clog2(TICKS+1);
+
+//   logic [CW-1:0] cnt;
+//   logic armed;
+
+//   always_ff @(posedge clk) begin
+//     click <= 1'b0;
+
+//       if (raw_pressed) begin
+//             cnt <= '0;
+//             if (held) begin
+//             held <= 1'b0;
+//             if (armed) begin
+//             click <= 1'b1;
+//             armed <= 1'b0;
+//             end
+//             end else (!held) begin
+//             if (cnt < TICKS[CW-1:0]) cnt <= cnt + 1'b1;
+//             if (cnt == TICKS-1) begin
+//             held  <= 1'b1;
+//             armed <= 1'b1;
+//             end
+//             end
+//       end
+//   end
+
+// endmodule
+
+module Button
+(
+      input  logic clk,
+      input  logic raw_pressed,
+      output logic held,
+      output logic click
 );
 
-  localparam int TICKS = (CLK_HZ/1000)*MS;
-  localparam int CW    = $clog2(TICKS+1);
+      // 50 MHz * 0.5 s = 25,000,000 cycles per half-second
+      localparam int HALF_SEC = 25_000_000;
+      logic [24:0] clk_cnt;  // 25 bits to hold up to 25M
 
-  logic [CW-1:0] cnt;
-  logic armed;
+      typedef enum logic [1:0] {
+            IDLE  = 2'b00,
+            CLICK = 2'b01,
+            WAIT  = 2'b10,
+            HOLD  = 2'b11
+      } state_t;
 
-  always_ff @(posedge clk) begin
-    click <= 1'b0;
+      state_t state;
 
-    if (raw_pressed) begin
-      if (!held) begin
-        if (cnt < TICKS[CW-1:0]) cnt <= cnt + 1'b1;
-        if (cnt == TICKS-1) begin
-          held  <= 1'b1;
-          armed <= 1'b1;
-        end
+      always_ff @(posedge clk) begin
+            click <= 1'b0;
+            held  <= 1'b0;
+
+            // Update clock counter
+            clk_cnt <= clk_cnt + 25'b1;
+
+            case (state)
+                  IDLE: begin
+                        if (raw_pressed)
+                              state <= CLICK;
+                  end
+
+                  CLICK: begin
+                        click <= 1'b1;
+                        hold <= 1'b1;
+                        state <= WAIT;
+
+                        // Set Timer
+                        clk_cnt <= 25'b0;
+                  end
+
+                  WAIT: begin
+                        if (clk_cnt == HALF_SEC && raw_pressed)
+                              state <= HOLD;
+                        else if (clk_cnt >= HALF_SEC && !raw_pressed)
+                              state <= IDLE;
+                  end
+                  HOLD: begin
+                        held <= 1'b1;
+                        if (!raw_pressed)
+                              state <= IDLE;
+                  end
+            endcase
       end
-    end else begin
-      cnt <= '0;
-      if (held) begin
-        held <= 1'b0;
-        if (armed) begin
-          click <= 1'b1;
-          armed <= 1'b0;
-        end
-      end
-    end
-  end
 
 endmodule
