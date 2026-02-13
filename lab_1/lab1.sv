@@ -23,9 +23,11 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
       // Define hex display 
       logic [11:0] disp_hex;
+      logic [11:0] disp_count;
 
       // Display (Either read base SW or offset SW)
       assign disp_hex = {2'b00, SW} + offset;
+      assign disp_count = done ? count : 16'b0;
 
       // Offset for incrementing / decrementing display + Memory Address
       logic [11:0] offset;
@@ -57,9 +59,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
 
       // HEX displays
-      hex7seg H0(.a(count[ 3:0]), .y(HEX0));
-      hex7seg H1(.a(count[ 7:4]), .y(HEX1));
-      hex7seg H2(.a(count[11:8]), .y(HEX2));
+      hex7seg H0(.a(disp_count[ 3:0]), .y(HEX0));
+      hex7seg H1(.a(disp_count[ 7:4]), .y(HEX1));
+      hex7seg H2(.a(disp_count[11:8]), .y(HEX2));
       hex7seg H3(.a(disp_hex[ 3:0]), .y(HEX3));
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
