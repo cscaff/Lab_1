@@ -12,6 +12,7 @@ default :
 	@echo "make hex7seg"
 	@echo "make collatz.vcd"
 	@echo "make range.vcd"
+	@echo "make button.vcd"
 	@echo "make lint"
 	@echo "make output_files/lab1.sof"
 	@echo "make program"
@@ -71,6 +72,9 @@ collatz.vcd : obj_dir/Vcollatz
 range.vcd : obj_dir/Vrange
 	obj_dir/Vrange
 
+button.vcd : obj_dir/VButton
+	obj_dir/VButton
+
 
 # Create Verilator simulations
 
@@ -88,6 +92,11 @@ obj_dir/Vrange : collatz.sv range.sv range.cpp
 	verilator -trace -Wall -cc collatz.sv range.sv -exe range.cpp \
 		-top-module range
 	cd obj_dir && make -j -f Vrange.mk
+
+obj_dir/VButton : lab1.sv button.cpp
+	verilator -trace -Wall -cc lab1.sv -exe button.cpp \
+		-top-module Button -GHALF_SEC=10
+	cd obj_dir && make -j -f VButton.mk
 
 
 # Create a .tar.gz file of the contents
