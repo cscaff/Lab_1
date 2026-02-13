@@ -153,7 +153,7 @@ endmodule
 
 /* verilator lint_off DECLFILENAME */
 module Button
-   #(parameter int TIME_OUT = 10_000_000) // 50 MHz * 0.5 s
+   #(parameter int TIME_OUT = 9_500_000) // 50 MHz * 0.5 s
 (
       input  logic clk,
       input  logic raw_pressed,
