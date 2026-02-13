@@ -187,7 +187,7 @@ module Button
 
                   CLICK: begin
                         click <= 1'b1;
-                        hold <= 1'b1;
+                        held <= 1'b1;
                         state <= WAIT;
 
                         // Set Timer
