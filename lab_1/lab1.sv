@@ -26,7 +26,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic [11:0] disp_count;
 
       // Display (Either read base SW or offset SW)
-      assign disp_hex = {2'b00, SW} + offset;
+      assign disp_hex =  (state == FINISH) ? start[11:0] : {2'b00, SW} + offset;
       assign disp_count = (state == FINISH) ? count[11:0] : 12'b0;
 
       // Offset for incrementing / decrementing display + Memory Address
