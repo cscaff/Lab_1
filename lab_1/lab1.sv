@@ -21,24 +21,14 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic [31:0] 		start;
       logic [15:0] 		count;
 
-      // logic [11:0] 		n;
-
-
       // Define hex display 
       logic [11:0] disp_hex;
-
-      // Offset for incrementing / decrementing display + Memory Address
-      logic [11:0] offset;
-
-      logic [15:0] count_d;
 
       // Display (Either read base SW or offset SW)
       assign disp_hex = {2'b00, SW} + offset;
 
-      // Start Value (if not done: base SW, else offset memory read)
-      assign start = done ? {24'b0, offset[7:0]} : disp_hex;
-      // If start = done, start = count to read, else start = base SW
-
+      // Offset for incrementing / decrementing display + Memory Address
+      logic [11:0] offset;
 
       assign clk = CLOCK_50;
       
@@ -51,7 +41,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       logic c0, c1, c2, c3;  // click events (one-cycle on release)
 
       // Repeat Counter
-      logic [22:0] rep_cnt;
+      // logic [22:0] rep_cnt;
 
       // Debouncing Buttons
       localparam int CLK_HZ = 50_000_000;
@@ -67,9 +57,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
 
       // HEX displays
-      hex7seg H0(.a(count_d[ 3:0]), .y(HEX0));
-      hex7seg H1(.a(count_d[ 7:4]), .y(HEX1));
-      hex7seg H2(.a(count_d[11:8]), .y(HEX2));
+      hex7seg H0(.a(count[ 3:0]), .y(HEX0));
+      hex7seg H1(.a(count[ 7:4]), .y(HEX1));
+      hex7seg H2(.a(count[11:8]), .y(HEX2));
       hex7seg H3(.a(disp_hex[ 3:0]), .y(HEX3));
       hex7seg H4(.a(disp_hex[ 7:4]), .y(HEX4));
       hex7seg H5(.a(disp_hex[11:8]), .y(HEX5));
@@ -77,33 +67,89 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
       // Increment / decrement display with buttons
       // Repeat counter for ~5 Hz increment
       always_ff @(posedge clk) begin
-            // Default
-            rep_cnt <= rep_cnt + 23'd1;
-            go <= 1'b0;
+            // // Default
+            // rep_cnt <= rep_cnt + 23'd1;
+            // go <= 1'b0;
 
-            // Keep count stable until done
-            if (done)
-                  count_d <= count;
-            else
-                  count_d <= count_d;
+            // // Keep count stable until done
 
-            // click increments 
-            if (c3) begin
-                  go <= 1'b1;
-            end
-            else if (c0)
-                  offset <= offset + 12'd1;
-            else if (c1)
-                  offset <= offset - 12'd1;
-            else if (c2)
-                  offset <= 12'd0;
-            // hold increments (repeated at ~5 Hz)
-            else if (rep_cnt == 23'd0) begin
-                  if (h0)
-                        offset <= offset + 12'd1;
-                  else if (h1)
-                        offset <= offset - 12'd1;
-            end
+            // // click increments 
+            // if (c3) begin
+            //       go <= 1'b1;
+            // end
+            // else if (c0)
+            //       offset <= offset + 12'd1;
+            // else if (c1)
+            //       offset <= offset - 12'd1;
+            // else if (c2)
+            //       offset <= 12'd0;
+            // // hold increments (repeated at ~5 Hz)
+            // else if (rep_cnt == 23'd0) begin
+            //       if (h0)
+            //             offset <= offset + 12'd1;
+            //       else if (h1)
+            //             offset <= offset - 12'd1;
+            // end
+
+
+            // Defaults
+            typedef enum logic [2:0] {
+                  IDLE    = 3'b000,
+                  GO      = 3'b001,
+                  RUNNING = 3'b010,
+                  FINISH  = 3'b011,
+                  RESET   = 3'b100
+            } state_t;
+
+            state_t state;
+
+
+            // Button Clicks
+            always_ff @(posedge clk) begin
+                  // DEFAULT
+                  go <= 1'b0;
+
+                  case (state)
+                        IDLE: begin
+                              // OUTPUT
+                              start <= {24'b0, SW};
+
+                              // GO transition
+                              if (c3 && !c2 && !c1 && !c0) state <= GO;
+                        end
+
+                        GO: begin
+                              // OUTPUT
+                              go <= 1'b1;
+                              state <= RUNNING;
+                        end
+
+                        RUNNING: begin
+                              if (done) begin
+                                    state <= FINISH;
+                                    start <= {24'b0, offset[7:0]};
+                              end 
+                        end
+
+                        FINISH: begin
+                              if (c0 && !c1 && !c2 && !c3) begin
+                                    offset <= offset + 12'd1;
+                              end else if (!c0 && c1 && !c2 && !c3) begin
+                                    offset <= 12'd0 - 12'd1;
+                              end else if (!c0 && !c1 && c2 && !c3) begin
+                                    offset <= 12'd0;
+                                    // RETURN TO RESET
+                                    state <= RESET;
+                              end
+                        end
+
+                        RESET: begin
+                              state <= IDLE;
+                        end
+                  endcase  
+            end 
+
+
       end
 endmodule
 
