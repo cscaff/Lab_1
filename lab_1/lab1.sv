@@ -151,8 +151,9 @@ endmodule
 
 // endmodule
 
+/* verilator lint_off DECLFILENAME */
 module Button
-   #(parameter int HALF_SEC = 25_000_000) // 50 MHz * 0.5 s
+   #(parameter int TIME_OUT = 10_000_000) // 50 MHz * 0.5 s
 (
       input  logic clk,
       input  logic raw_pressed,
@@ -194,9 +195,9 @@ module Button
                   end
 
                   WAIT: begin
-                        if (clk_cnt == HALF_SEC && raw_pressed)
+                        if (clk_cnt == TIME_OUT && raw_pressed)
                               state <= HOLD;
-                        else if (clk_cnt >= HALF_SEC && !raw_pressed)
+                        else if (clk_cnt >= TIME_OUT && !raw_pressed)
                               state <= IDLE;
                   end
                   HOLD: begin

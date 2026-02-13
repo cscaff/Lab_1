@@ -1,5 +1,6 @@
 #include <iostream>
 #include "VButton.h"
+#include "VButton___024root.h"
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
@@ -17,6 +18,7 @@ int main(int argc, const char ** argv, const char ** env) {
   dut->raw_pressed = 0;
 
   int time = 0;
+  int cycle = 0;
 
   auto tick = [&]() {
     dut->clk = 0;
@@ -28,63 +30,47 @@ int main(int argc, const char ** argv, const char ** env) {
     dut->eval();
     tfp->dump(time);
     time += 10;
+
+    std::cout << "  cycle " << cycle
+              << "  raw=" << (int)dut->raw_pressed
+              << "  click=" << (int)dut->click
+              << "  held=" << (int)dut->held
+              << "  state=" << (int)dut->rootp->Button__DOT__state
+              << "  cnt=" << (int)dut->rootp->Button__DOT__clk_cnt
+              << std::endl;
+    cycle++;
   };
 
-  // --- Test 1: Short click (press for a few cycles, release before HALF_SEC) ---
+  // --- Test 1: Short click (press 3 cycles, release before HALF_SEC) ---
   std::cout << "=== Test 1: Short click ===" << std::endl;
+  for (int i = 0; i < 3; i++) tick();   // idle
 
-  // Idle for a few cycles
+  dut->raw_pressed = 1;
+  for (int i = 0; i < 3; i++) tick();   // press
+
+  dut->raw_pressed = 0;
+  for (int i = 0; i < 15; i++) tick();  // release
+
+  // --- Test 2: Long hold (press past HALF_SEC) ---
+  std::cout << "\n=== Test 2: Long hold ===" << std::endl;
+  dut->raw_pressed = 1;
+  for (int i = 0; i < 20; i++) tick();
+
+  dut->raw_pressed = 0;
   for (int i = 0; i < 5; i++) tick();
 
-  // Press button
-  dut->raw_pressed = 1;
-  for (int i = 0; i < 3; i++) tick();
-
-  // Release before HALF_SEC
-  dut->raw_pressed = 0;
-  for (int i = 0; i < 20; i++) {
-    tick();
-    if (dut->click) std::cout << "  click detected at time " << time << std::endl;
-  }
-
-  // --- Test 2: Long hold (press and hold past HALF_SEC) ---
-  std::cout << "=== Test 2: Long hold ===" << std::endl;
-
-  // Press and hold for longer than HALF_SEC (10 cycles in sim)
-  dut->raw_pressed = 1;
-  for (int i = 0; i < 20; i++) {
-    tick();
-    if (dut->click) std::cout << "  click detected at time " << time << std::endl;
-    if (dut->held)  std::cout << "  held detected at time " << time << std::endl;
-  }
-
-  // Release
-  dut->raw_pressed = 0;
-  for (int i = 0; i < 10; i++) {
-    tick();
-    if (dut->held) std::cout << "  held still active at time " << time << std::endl;
-  }
-
-  // --- Test 3: Very brief tap (1 cycle press) ---
-  std::cout << "=== Test 3: Brief tap ===" << std::endl;
-
+  // --- Test 3: Very brief tap (1 cycle) ---
+  std::cout << "\n=== Test 3: Brief tap ===" << std::endl;
   dut->raw_pressed = 1;
   tick();
   dut->raw_pressed = 0;
-  for (int i = 0; i < 20; i++) {
-    tick();
-    if (dut->click) std::cout << "  click detected at time " << time << std::endl;
-  }
-
-  // Let it settle
-  for (int i = 0; i < 5; i++) tick();
+  for (int i = 0; i < 10; i++) tick();
 
   tfp->close();
   delete tfp;
-
   dut->final();
   delete dut;
 
-  std::cout << "=== Done ===" << std::endl;
+  std::cout << "\n=== Done ===" << std::endl;
   return 0;
 }
